@@ -535,7 +535,7 @@
     <div class="hero-mark-icon pulsing">🕸️</div>
     <div class="hero-meta">
       <div class="hero-meta-title">ZetaBox · AI Engineering Internship</div>
-      <div class="hero-meta-org">First Task — Technical Presentation</div>
+      <div class="hero-meta-org">Technical Presentation</div>
     </div>
   </div>
   <h1>Graph<span class="accent-word">RAG</span></h1>
@@ -551,14 +551,6 @@
       <div class="stat__num" style="color:var(--accent2);">3</div>
       <div class="stat__label">GraphRAG architectures, full retrieval flows</div>
     </div>
-    <div class="stat">
-      <div class="stat__num" style="color:var(--accent3);">83%</div>
-      <div class="stat__label">comprehensiveness gain on global queries</div>
-    </div>
-    <div class="stat">
-      <div class="stat__num" style="color:var(--success);">$33</div>
-      <div class="stat__label">indexing cost today vs $33K in 2024</div>
-    </div>
   </div>
 </section>
 
@@ -566,7 +558,7 @@
 <!-- SLIDE 1 — RAG LANDSCAPE                                    -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-1">
-  <div class="slide-badge">01 / 18</div>
+  <div class="slide-badge">01 / 17</div>
   <div class="eyebrow">The RAG Landscape</div>
   <h2>Four Paradigms, One Goal</h2>
   <p>Every RAG system grounds LLM output in retrieved knowledge. What separates them is <em>how</em> they retrieve — and what structures they assume about data.</p>
@@ -617,7 +609,7 @@
 <!-- SLIDE 2 — NAIVE RAG                                        -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-2">
-  <div class="slide-badge">02 / 18</div>
+  <div class="slide-badge">02 / 17</div>
   <div class="eyebrow">Paradigm 1</div>
   <h2>Naive / Basic RAG</h2>
   <div class="pipeline" style="margin-bottom:32px;">
@@ -660,7 +652,7 @@
 <!-- SLIDE 3 — ADVANCED RAG                                     -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-3">
-  <div class="slide-badge">03 / 18</div>
+  <div class="slide-badge">03 / 17</div>
   <div class="eyebrow">Paradigm 2</div>
   <h2>Advanced RAG</h2>
   <p>Same vector-search backbone, but optimized at every stage — raising factual accuracy from ~44% to ~63%.</p>
@@ -703,7 +695,7 @@
 <!-- SLIDE 4 — AGENTIC RAG                                      -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-4">
-  <div class="slide-badge">04 / 18</div>
+  <div class="slide-badge">04 / 17</div>
   <div class="eyebrow">Paradigm 3</div>
   <h2>Agentic RAG</h2>
   <p>The LLM is the controller. A dynamic loop replaces the fixed pipeline.</p>
@@ -748,7 +740,7 @@
 <!-- SLIDE 5 — GRAPHRAG INTRO                                   -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-5">
-  <div class="slide-badge">05 / 18</div>
+  <div class="slide-badge">05 / 17</div>
   <div class="eyebrow">Paradigm 4 — The Focus</div>
   <h2>What Is GraphRAG?</h2>
   <div class="grid-2" style="margin-top:24px;gap:32px;align-items:start;">
@@ -788,51 +780,12 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- SLIDE 6 — HOW GRAPHRAG WORKS                               -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="slide" id="slide-6">
-  <div class="slide-badge">06 / 18</div>
-  <div class="eyebrow">GraphRAG Internals</div>
-  <h2>Indexing + Query Pipeline</h2>
-  <div class="grid-2" style="gap:28px;margin-top:16px;">
-    <div>
-      <h3 style="color:var(--accent2);margin-bottom:14px;">📥 Indexing Pipeline</h3>
-      <div class="pipeline" style="flex-direction:column;overflow:visible;">
-        <div class="pipe-step" style="min-width:0;text-align:left;padding:10px 14px;margin-bottom:4px;"><span class="step-num">STEP 1</span><span class="step-label">Chunk documents (~600 tokens each)</span></div>
-        <div class="pipe-arrow" style="transform:rotate(90deg);padding:2px 0;">↓</div>
-        <div class="pipe-step highlight" style="min-width:0;text-align:left;padding:10px 14px;margin-bottom:4px;"><span class="step-num">STEP 2 — LLM Call per chunk</span><span class="step-label">Extract (entity, relationship, entity) triples</span></div>
-        <div class="pipe-arrow" style="transform:rotate(90deg);padding:2px 0;">↓</div>
-        <div class="pipe-step" style="min-width:0;text-align:left;padding:10px 14px;margin-bottom:4px;"><span class="step-num">STEP 3</span><span class="step-label">Deduplicate entities, weight edges by co-occurrence</span></div>
-        <div class="pipe-arrow" style="transform:rotate(90deg);padding:2px 0;">↓</div>
-        <div class="pipe-step highlight" style="min-width:0;text-align:left;padding:10px 14px;margin-bottom:4px;"><span class="step-num">STEP 4</span><span class="step-label">Leiden community detection → hierarchical clusters</span></div>
-        <div class="pipe-arrow" style="transform:rotate(90deg);padding:2px 0;">↓</div>
-        <div class="pipe-step highlight2" style="min-width:0;text-align:left;padding:10px 14px;"><span class="step-num">STEP 5 — LLM Call per community</span><span class="step-label">Generate community summaries (all levels)</span></div>
-      </div>
-    </div>
-    <div>
-      <h3 style="color:var(--accent3);margin-bottom:14px;">🔍 Three Query Modes</h3>
-      <div class="card card--accent" style="margin-bottom:10px;padding:14px 16px;">
-        <span class="card__tag tag--blue">LOCAL SEARCH</span>
-        <p style="font-size:13px;margin:0;">Entity-centric. Embeds query → finds top-k entities → expands to neighborhood (related entities, edges, source chunks) → LLM synthesizes. Best for: <em>specific focused questions</em>.</p>
-      </div>
-      <div class="card card--accent2" style="margin-bottom:10px;padding:14px 16px;">
-        <span class="card__tag tag--cyan">GLOBAL SEARCH</span>
-        <p style="font-size:13px;margin:0;">Community-centric. Retrieves all community reports → map-reduce scoring → aggregated final answer. Best for: <em>"what are the main themes across the entire corpus?"</em></p>
-      </div>
-      <div class="card card--accent3" style="padding:14px 16px;">
-        <span class="card__tag tag--purple">DRIFT SEARCH (Oct 2024)</span>
-        <p style="font-size:13px;margin:0;">Hybrid. Global search → hypothesis + sub-questions → local search per sub-question → 2-pass iterative refinement. Best of both.</p>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- SLIDE 7 — MICROSOFT GRAPHRAG                               -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-7">
-  <div class="slide-badge">07 / 18</div>
+  <div class="slide-badge">06 / 17</div>
   <div class="eyebrow">Architecture 1</div>
   <h2>Microsoft GraphRAG</h2>
   <div class="grid-2" style="gap:28px;margin-top:16px;">
@@ -851,18 +804,7 @@
       </ul>
     </div>
     <div>
-      <h3 style="margin-bottom:14px;">Cost Reality</h3>
-      <table class="ctable">
-        <thead><tr><th>Corpus</th><th>2024 Cost (GPT-4)</th><th>With LazyGraphRAG</th></tr></thead>
-        <tbody>
-          <tr><td>~100 docs (1M tokens)</td><td style="color:var(--warn);">$100–$500</td><td style="color:var(--success);">$0.10–$0.50</td></tr>
-          <tr><td>~1,000 docs (10M tokens)</td><td style="color:var(--warn);">$1K–$5K</td><td style="color:var(--success);">$1–$5</td></tr>
-          <tr><td>~10,000 docs (5GB)</td><td style="color:var(--danger);">$33,000</td><td style="color:var(--success);">~$33</td></tr>
-        </tbody>
-      </table>
-      <div class="callout callout--warn" style="margin-top:16px;">
-        <strong>LazyGraphRAG (Nov 2024)</strong> defers LLM summarization to query time, using lightweight NLP for indexing — reducing cost to <strong>0.1%</strong> of full GraphRAG.
-      </div>
+
       <h3 style="margin-top:16px;margin-bottom:8px;">When to use</h3>
       <ul class="check-list tick-list" style="font-size:13px;">
         <li>Large corpora needing global thematic queries</li>
@@ -874,180 +816,10 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- SLIDE 8 — LIGHTRAG                                         -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="slide" id="slide-8">
-  <div class="slide-badge">08 / 18</div>
-  <div class="eyebrow">Architecture 2</div>
-  <h2>LightRAG</h2>
-  <div class="grid-2" style="gap:28px;margin-top:16px;">
-    <div>
-      <div class="callout" style="margin-bottom:16px;">
-        <strong>Guo et al., arXiv:2410.05779 (Oct 2024)</strong> — EMNLP 2025. Lightweight alternative that skips expensive community clustering entirely.
-      </div>
-      <h3 style="margin-bottom:10px;">Key Design Decision</h3>
-      <p style="font-size:14px;">Instead of pre-computing community summaries, LightRAG stores <code>(entity, relationship)</code> pairs as both graph elements <em>and</em> key-value entries queryable by vector similarity — enabling <strong>dual-level retrieval</strong> without Leiden overhead.</p>
-      <div style="margin-top:18px;display:flex;gap:10px;align-items:stretch;">
-        <div class="card card--accent" style="flex:1;padding:12px 14px;">
-          <span class="card__tag tag--blue">Low-Level</span>
-          <p style="font-size:12px;margin:0;">Entity-specific retrieval — precise, local facts</p>
-        </div>
-        <div class="card card--accent3" style="flex:1;padding:12px 14px;">
-          <span class="card__tag tag--purple">High-Level</span>
-          <p style="font-size:12px;margin:0;">Concept-level retrieval — thematic, abstract queries</p>
-        </div>
-      </div>
-    </div>
-    <div>
-      <h3 style="margin-bottom:14px;">Performance vs MS GraphRAG</h3>
-      <div class="bar-chart">
-        <div class="bar-item">
-          <div class="bar-meta"><span>Indexing token cost reduction</span><span>~60% lower</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--success);"></div></div>
-        </div>
-        <div class="bar-item">
-          <div class="bar-meta"><span>Query latency reduction</span><span>~2× faster</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--accent2);"></div></div>
-        </div>
-        <div class="bar-item">
-          <div class="bar-meta"><span>Multi-domain accuracy (EMNLP 2025)</span><span>Beats MS GraphRAG</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--accent);"></div></div>
-        </div>
-        <div class="bar-item">
-          <div class="bar-meta"><span>Global summarization quality</span><span>Good (not excellent)</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:65%;background:var(--accent3);"></div></div>
-        </div>
-      </div>
-      <div class="callout callout--success" style="margin-top:18px;">
-        <strong>Outperforms</strong> NaiveRAG, RQ-RAG, HyDE, and MS GraphRAG across agriculture, CS, legal, and mixed domains. Supports <strong>incremental indexing</strong> natively.
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- SLIDE 9 — FAST GRAPHRAG                                    -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="slide" id="slide-9">
-  <div class="slide-badge">09 / 18</div>
-  <div class="eyebrow">Architecture 3</div>
-  <h2>Fast GraphRAG</h2>
-  <div class="grid-2" style="gap:28px;margin-top:16px;">
-    <div>
-      <div class="callout" style="margin-bottom:16px;">
-        <strong>CircleMind AI, 2024</strong> — No published academic paper. Sourced from official GitHub repository and DeepWiki codebase analysis.
-      </div>
-      <h3 style="margin-bottom:10px;">PageRank-Powered Retrieval</h3>
-      <p style="font-size:14px;">Replaces Leiden community summaries and vector-only matching with <strong>Personalized PageRank traversal</strong> over the entity graph. Query entities seed the graph; relevance propagates through topology; chunks are scored by propagation — never directly searched.</p>
-      <h3 style="margin-top:18px;margin-bottom:10px;">Indexing Structures</h3>
-      <ul class="check-list" style="font-size:13px;">
-        <li>Knowledge graph stored as igraph sparse matrix (entity nodes + relation edges)</li>
-        <li>HNSW vector index over entity description embeddings (<code>HNSWVectorStorage</code>)</li>
-        <li>Entities-to-relationships sparse matrix (E→R)</li>
-        <li>Relationships-to-chunks sparse matrix (R→C)</li>
-        <li>No community detection. No pre-computed community summaries.</li>
-      </ul>
-    </div>
-    <div>
-      <h3 style="margin-bottom:14px;">Trade-offs</h3>
-      <ul class="check-list tick-list" style="font-size:13px;margin-bottom:16px;">
-        <li>Very fast indexing — no LLM summarization overhead beyond entity extraction</li>
-        <li>Incremental updates supported natively — designed for dynamic corpora</li>
-        <li>PageRank gives graph-topology-aware scoring: connected entities rank higher</li>
-        <li>Interpretable: scoring path entities → relationships → chunks is fully traceable</li>
-      </ul>
-      <ul class="check-list cross-list" style="font-size:13px;margin-bottom:16px;">
-        <li>No global summarization capability (no community hierarchy)</li>
-        <li>Less battle-tested at large scale vs LightRAG / MS GraphRAG</li>
-        <li>No peer-reviewed paper — architecture sourced from codebase</li>
-      </ul>
-      <div class="callout callout--success">
-        <strong>Best for:</strong> Production systems with frequently changing corpora where rebuild costs are prohibitive, and queries are entity-centric rather than thematic.
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- SLIDE 10 — ARCHITECTURE COMPARISON                         -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<section class="slide" id="slide-10">
-  <div class="slide-badge">10 / 18</div>
-  <div class="eyebrow">Side-by-Side</div>
-  <h2>Architecture Comparison</h2>
-  <div style="overflow-x:auto;margin-top:20px;">
-    <table class="ctable">
-      <thead>
-        <tr><th>Feature</th><th>MS GraphRAG</th><th>LightRAG</th><th>Fast GraphRAG</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Community detection</td>
-          <td><span class="check">✓</span> Leiden (multi-level)</td>
-          <td><span class="cross">✗</span> None</td>
-          <td><span class="cross">✗</span> None</td>
-        </tr>
-        <tr>
-          <td>Incremental updates</td>
-          <td><span class="cross">✗</span> Expensive rebuild</td>
-          <td><span class="check">✓</span> Native</td>
-          <td><span class="check">✓</span> Native</td>
-        </tr>
-        <tr>
-          <td>Global thematic queries</td>
-          <td><span class="check">✓</span> Excellent</td>
-          <td><span class="check">✓</span> Good</td>
-          <td><span class="cross">✗</span> Weak</td>
-        </tr>
-        <tr>
-          <td>Local / entity queries</td>
-          <td><span class="check">✓</span> Good</td>
-          <td><span class="check">✓</span> Excellent</td>
-          <td><span class="check">✓</span> Good</td>
-        </tr>
-        <tr>
-          <td>Indexing cost</td>
-          <td><span class="danger-word">High</span></td>
-          <td><span class="partial">~60% lower</span></td>
-          <td><span class="success-word">Very low</span></td>
-        </tr>
-        <tr>
-          <td>First retrieval signal</td>
-          <td>Entity embed (local) / All communities (global)</td>
-          <td>LLM keyword → dual vector search</td>
-          <td>LLM entity extract → HNSW + PageRank</td>
-        </tr>
-        <tr>
-          <td>Chunk access method</td>
-          <td>Graph traversal from entities</td>
-          <td>KV lookup (entity/rel → chunk)</td>
-          <td>Score propagation (E→R→C matrices)</td>
-        </tr>
-        <tr>
-          <td>Production readiness</td>
-          <td><span class="success-word">High</span></td>
-          <td><span class="success-word">High</span></td>
-          <td><span class="warn-word">Medium</span></td>
-        </tr>
-        <tr>
-          <td>Academic paper</td>
-          <td><span class="check">✓</span> arXiv:2404.16130</td>
-          <td><span class="check">✓</span> arXiv:2410.05779 / EMNLP 2025</td>
-          <td><span class="cross">✗</span> Codebase only</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="callout" style="margin-top:20px;">
-    <strong>Core finding:</strong> All three systems are <em>entity-first</em>, not chunk-first. The vector search in each targets the entity or relation layer — never raw chunks directly. Chunks are always downstream of entity retrieval.
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
 <!-- SLIDE 11 — MS GRAPHRAG RETRIEVAL FLOW                      -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-11">
-  <div class="slide-badge">11 / 18</div>
+  <div class="slide-badge">07 / 17</div>
   <div class="eyebrow">Retrieval Flow Deep Dive · System 1</div>
   <h2>Microsoft GraphRAG — Query-Time Pipeline</h2>
 
@@ -1144,10 +916,64 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 8 — LIGHTRAG                                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-8">
+  <div class="slide-badge">08 / 17</div>
+  <div class="eyebrow">Architecture 2</div>
+  <h2>LightRAG</h2>
+  <div class="grid-2" style="gap:28px;margin-top:16px;">
+    <div>
+      <div class="callout" style="margin-bottom:16px;">
+        <strong>Guo et al., arXiv:2410.05779 (Oct 2024)</strong> — EMNLP 2025. Lightweight alternative that skips expensive community clustering entirely.
+      </div>
+      <h3 style="margin-bottom:10px;">Key Design Decision</h3>
+      <p style="font-size:14px;">Instead of pre-computing community summaries, LightRAG stores <code>(entity, relationship)</code> pairs as both graph elements <em>and</em> key-value entries queryable by vector similarity — enabling <strong>dual-level retrieval</strong> without Leiden overhead.</p>
+      <div style="margin-top:18px;display:flex;gap:10px;align-items:stretch;">
+        <div class="card card--accent" style="flex:1;padding:12px 14px;">
+          <span class="card__tag tag--blue">Low-Level</span>
+          <p style="font-size:12px;margin:0;">Entity-specific retrieval — precise, local facts</p>
+        </div>
+        <div class="card card--accent3" style="flex:1;padding:12px 14px;">
+          <span class="card__tag tag--purple">High-Level</span>
+          <p style="font-size:12px;margin:0;">Concept-level retrieval — thematic, abstract queries</p>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Performance vs MS GraphRAG</h3>
+      <div class="bar-chart">
+        <div class="bar-item">
+          <div class="bar-meta"><span>Indexing token cost reduction</span><span>~60% lower</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--success);"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-meta"><span>Query latency reduction</span><span>~2× faster</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--accent2);"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-meta"><span>Multi-domain accuracy (EMNLP 2025)</span><span>Beats MS GraphRAG</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--accent);"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-meta"><span>Global summarization quality</span><span>Good (not excellent)</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:65%;background:var(--accent3);"></div></div>
+        </div>
+      </div>
+      <div class="callout callout--success" style="margin-top:18px;">
+        <strong>Outperforms</strong> NaiveRAG, RQ-RAG, HyDE, and MS GraphRAG across agriculture, CS, legal, and mixed domains. Supports <strong>incremental indexing</strong> natively.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
 <!-- SLIDE 12 — LIGHTRAG RETRIEVAL FLOW                         -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-12">
-  <div class="slide-badge">12 / 18</div>
+  <div class="slide-badge">09 / 17</div>
   <div class="eyebrow">Retrieval Flow Deep Dive · System 2</div>
   <h2>LightRAG — Query-Time Pipeline</h2>
 
@@ -1225,10 +1051,54 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 9 — FAST GRAPHRAG                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-9">
+  <div class="slide-badge">10 / 17</div>
+  <div class="eyebrow">Architecture 3</div>
+  <h2>Fast GraphRAG</h2>
+  <div class="grid-2" style="gap:28px;margin-top:16px;">
+    <div>
+      <div class="callout" style="margin-bottom:16px;">
+        <strong>CircleMind AI, 2024</strong> — No published academic paper. Sourced from official GitHub repository and DeepWiki codebase analysis.
+      </div>
+      <h3 style="margin-bottom:10px;">PageRank-Powered Retrieval</h3>
+      <p style="font-size:14px;">Replaces Leiden community summaries and vector-only matching with <strong>Personalized PageRank traversal</strong> over the entity graph. Query entities seed the graph; relevance propagates through topology; chunks are scored by propagation — never directly searched.</p>
+      <h3 style="margin-top:18px;margin-bottom:10px;">Indexing Structures</h3>
+      <ul class="check-list" style="font-size:13px;">
+        <li>Knowledge graph stored as igraph sparse matrix (entity nodes + relation edges)</li>
+        <li>HNSW vector index over entity description embeddings (<code>HNSWVectorStorage</code>)</li>
+        <li>Entities-to-relationships sparse matrix (E→R)</li>
+        <li>Relationships-to-chunks sparse matrix (R→C)</li>
+        <li>No community detection. No pre-computed community summaries.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Trade-offs</h3>
+      <ul class="check-list tick-list" style="font-size:13px;margin-bottom:16px;">
+        <li>Very fast indexing — no LLM summarization overhead beyond entity extraction</li>
+        <li>Incremental updates supported natively — designed for dynamic corpora</li>
+        <li>PageRank gives graph-topology-aware scoring: connected entities rank higher</li>
+        <li>Interpretable: scoring path entities → relationships → chunks is fully traceable</li>
+      </ul>
+      <ul class="check-list cross-list" style="font-size:13px;margin-bottom:16px;">
+        <li>No global summarization capability (no community hierarchy)</li>
+        <li>Less battle-tested at large scale vs LightRAG / MS GraphRAG</li>
+        <li>No peer-reviewed paper — architecture sourced from codebase</li>
+      </ul>
+      <div class="callout callout--success">
+        <strong>Best for:</strong> Production systems with frequently changing corpora where rebuild costs are prohibitive, and queries are entity-centric rather than thematic.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
 <!-- SLIDE 13 — FAST GRAPHRAG RETRIEVAL FLOW                    -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-13">
-  <div class="slide-badge">13 / 18</div>
+  <div class="slide-badge">11 / 17</div>
   <div class="eyebrow">Retrieval Flow Deep Dive · System 3</div>
   <h2>Fast GraphRAG — Query-Time Pipeline</h2>
 
@@ -1327,10 +1197,88 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 10 — ARCHITECTURE COMPARISON                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-10">
+  <div class="slide-badge">12 / 17</div>
+  <div class="eyebrow">Side-by-Side</div>
+  <h2>Architecture Comparison</h2>
+  <div style="overflow-x:auto;margin-top:20px;">
+    <table class="ctable">
+      <thead>
+        <tr><th>Feature</th><th>MS GraphRAG</th><th>LightRAG</th><th>Fast GraphRAG</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Community detection</td>
+          <td><span class="check">✓</span> Leiden (multi-level)</td>
+          <td><span class="cross">✗</span> None</td>
+          <td><span class="cross">✗</span> None</td>
+        </tr>
+        <tr>
+          <td>Incremental updates</td>
+          <td><span class="cross">✗</span> Expensive rebuild</td>
+          <td><span class="check">✓</span> Native</td>
+          <td><span class="check">✓</span> Native</td>
+        </tr>
+        <tr>
+          <td>Global thematic queries</td>
+          <td><span class="check">✓</span> Excellent</td>
+          <td><span class="check">✓</span> Good</td>
+          <td><span class="cross">✗</span> Weak</td>
+        </tr>
+        <tr>
+          <td>Local / entity queries</td>
+          <td><span class="check">✓</span> Good</td>
+          <td><span class="check">✓</span> Excellent</td>
+          <td><span class="check">✓</span> Good</td>
+        </tr>
+        <tr>
+          <td>Indexing cost</td>
+          <td><span class="danger-word">High</span></td>
+          <td><span class="partial">~60% lower</span></td>
+          <td><span class="success-word">Very low</span></td>
+        </tr>
+        <tr>
+          <td>First retrieval signal</td>
+          <td>Entity embed (local) / All communities (global)</td>
+          <td>LLM keyword → dual vector search</td>
+          <td>LLM entity extract → HNSW + PageRank</td>
+        </tr>
+        <tr>
+          <td>Chunk access method</td>
+          <td>Graph traversal from entities</td>
+          <td>KV lookup (entity/rel → chunk)</td>
+          <td>Score propagation (E→R→C matrices)</td>
+        </tr>
+        <tr>
+          <td>Production readiness</td>
+          <td><span class="success-word">High</span></td>
+          <td><span class="success-word">High</span></td>
+          <td><span class="warn-word">Medium</span></td>
+        </tr>
+        <tr>
+          <td>Academic paper</td>
+          <td><span class="check">✓</span> arXiv:2404.16130</td>
+          <td><span class="check">✓</span> arXiv:2410.05779 / EMNLP 2025</td>
+          <td><span class="cross">✗</span> Codebase only</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:20px;">
+    <strong>Core finding:</strong> All three systems are <em>entity-first</em>, not chunk-first. The vector search in each targets the entity or relation layer — never raw chunks directly. Chunks are always downstream of entity retrieval.
+  </div>
+</section>
+
+
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
 <!-- SLIDE 14 — USE CASES                                       -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-14">
-  <div class="slide-badge">14 / 18</div>
+  <div class="slide-badge">13 / 17</div>
   <div class="eyebrow">Real-World Applications</div>
   <h2>Where GraphRAG Delivers</h2>
   <div class="grid-2" style="margin-top:20px;gap:16px;">
@@ -1385,7 +1333,7 @@
 <!-- SLIDE 15 — BENCHMARKS                                      -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-15">
-  <div class="slide-badge">15 / 18</div>
+  <div class="slide-badge">14 / 17</div>
   <div class="eyebrow">Performance</div>
   <h2>Benchmarks &amp; Evaluation</h2>
   <div class="grid-2" style="gap:28px;margin-top:20px;">
@@ -1434,7 +1382,7 @@
 <!-- SLIDE 16 — PRODUCTION STACK                                -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-16">
-  <div class="slide-badge">16 / 18</div>
+  <div class="slide-badge">15 / 17</div>
   <div class="eyebrow">Implementation</div>
   <h2>Production Tech Stack</h2>
   <div class="grid-2" style="gap:28px;margin-top:20px;">
@@ -1501,7 +1449,7 @@
 <!-- SLIDE 17 — TRENDS                                          -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-17">
-  <div class="slide-badge">17 / 18</div>
+  <div class="slide-badge">16 / 17</div>
   <div class="eyebrow">Research Directions</div>
   <h2>Where the Field Is Heading</h2>
   <div class="grid-2" style="gap:24px;margin-top:20px;">
@@ -1566,7 +1514,7 @@
 <!-- SLIDE 18 — SUMMARY                                         -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <section class="slide" id="slide-18">
-  <div class="slide-badge">18 / 18</div>
+  <div class="slide-badge">17 / 17</div>
   <div class="eyebrow">Key Takeaways</div>
   <h2>Summary &amp; Decision Framework</h2>
   <div class="grid-2" style="gap:28px;margin-top:20px;">
