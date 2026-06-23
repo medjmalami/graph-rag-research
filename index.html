@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GraphRAG — Technical Presentation</title>
+<style>
+  :root {
+    --bg:        #0b0d12;
+    --surface:   #121620;
+    --raised:    #1a2030;
+    --border:    #1f2d45;
+    --accent:    #3b82f6;
+    --accent2:   #22d3ee;
+    --accent3:   #a78bfa;
+    --success:   #34d399;
+    --warn:      #fb923c;
+    --danger:    #f87171;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --dim:       #334155;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  .deck { width: 100%; }
+
+  .slide {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 10vw;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .slide.visible { opacity: 1; transform: translateY(0); }
+
+  .slide--hero {
+    min-height: 100vh;
+    align-items: center;
+    text-align: center;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,130,246,0.12) 0%, transparent 70%),
+      var(--bg);
+    padding: 60px 8vw;
+  }
+
+  .nav {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+  }
+  .nav-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--dim);
+    cursor: pointer;
+    transition: background 0.25s, transform 0.25s;
+    border: none;
+  }
+  .nav-dot:hover, .nav-dot.active {
+    background: var(--accent);
+    transform: scale(1.4);
+  }
+
+  .slide-badge {
+    position: absolute;
+    top: 36px; right: 10vw;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 5vw, 4.2rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 20px;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: #fff;
+    margin-bottom: 24px;
+  }
+  h3 {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  p { color: var(--text); margin-bottom: 14px; max-width: 72ch; }
+  p:last-child { margin-bottom: 0; }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--muted);
+    max-width: 60ch;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+
+  .accent-word  { color: var(--accent); }
+  .accent2-word { color: var(--accent2); }
+  .accent3-word { color: var(--accent3); }
+  .success-word { color: var(--success); }
+  .warn-word    { color: var(--warn); }
+  .danger-word  { color: var(--danger); }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--raised);
+    color: var(--accent2);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .slide { padding: 60px 6vw; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card--accent  { border-top: 2px solid var(--accent); }
+  .card--accent2 { border-top: 2px solid var(--accent2); }
+  .card--accent3 { border-top: 2px solid var(--accent3); }
+  .card--warn    { border-top: 2px solid var(--warn); }
+  .card--success { border-top: 2px solid var(--success); }
+  .card--danger  { border-top: 2px solid var(--danger); }
+
+  .card__icon { font-size: 1.6rem; margin-bottom: 10px; display: block; }
+  .card__tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  .tag--blue   { background: rgba(59,130,246,0.15);  color: var(--accent);  }
+  .tag--cyan   { background: rgba(34,211,238,0.12);  color: var(--accent2); }
+  .tag--purple { background: rgba(167,139,250,0.12); color: var(--accent3); }
+  .tag--green  { background: rgba(52,211,153,0.12);  color: var(--success); }
+  .tag--orange { background: rgba(251,146,60,0.12);  color: var(--warn);    }
+  .tag--red    { background: rgba(248,113,113,0.12); color: var(--danger);  }
+
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    overflow-x: auto;
+    padding: 8px 0 20px;
+  }
+  .pipe-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    min-width: 130px;
+    text-align: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .pipe-step .step-num   { font-family: var(--font-mono); font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .pipe-step .step-label { font-size: 12px; font-weight: 600; color: #fff; }
+  .pipe-step .step-sub   { font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .pipe-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; padding: 0 6px; flex-shrink: 0; }
+  .pipe-step.highlight  { border-color: var(--accent);  background: rgba(59,130,246,0.08); }
+  .pipe-step.highlight2 { border-color: var(--accent3); background: rgba(167,139,250,0.08); }
+  .pipe-step.highlight3 { border-color: var(--accent2); background: rgba(34,211,238,0.08); }
+  .pipe-step.highlight4 { border-color: var(--success); background: rgba(52,211,153,0.08); }
+
+  .ctable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ctable th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--raised);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .ctable td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .ctable tr:last-child td { border-bottom: none; }
+  .ctable tr:hover td { background: rgba(255,255,255,0.02); }
+  .ctable td:first-child { font-weight: 600; color: #fff; }
+
+  .check   { color: var(--success); }
+  .cross   { color: var(--danger); }
+  .partial { color: var(--warn); }
+
+  .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 22px;
+    flex: 1;
+    min-width: 150px;
+  }
+  .stat__num   { font-family: var(--font-display); font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .stat__label { font-size: 12px; color: var(--muted); }
+
+  .kg-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    position: relative;
+    height: 280px;
+    overflow: hidden;
+  }
+  .kg-node {
+    position: absolute;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    cursor: default;
+    transition: transform 0.2s;
+    line-height: 1.2;
+    padding: 4px;
+  }
+  .kg-node:hover { transform: scale(1.12); }
+  .kg-node--main { width: 76px; height: 76px; background: rgba(59,130,246,0.2);  border: 2px solid var(--accent);  color: #93c5fd; }
+  .kg-node--sec  { width: 60px; height: 60px; background: rgba(34,211,238,0.15); border: 2px solid var(--accent2); color: #67e8f9; }
+  .kg-node--leaf { width: 48px; height: 48px; background: rgba(167,139,250,0.12);border: 1px solid var(--accent3); color: #c4b5fd; font-size: 10px; }
+
+  .bar-chart { display: flex; flex-direction: column; gap: 14px; }
+  .bar-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+  .bar-meta span:first-child { font-weight: 500; }
+  .bar-meta span:last-child  { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .bar-track { background: var(--raised); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 4px; transition: width 1s ease; }
+
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 8px; bottom: 8px;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent3));
+  }
+  .tl-item { position: relative; margin-bottom: 22px; }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -24px; top: 6px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+  }
+  .tl-item:last-child { margin-bottom: 0; }
+  .tl-date  { font-family: var(--font-mono); font-size: 11px; color: var(--accent); margin-bottom: 4px; }
+  .tl-title { font-weight: 600; font-size: 14px; color: #fff; margin-bottom: 4px; }
+  .tl-desc  { font-size: 13px; color: var(--muted); }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(59,130,246,0.07);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout--warn    { border-color: var(--warn);    background: rgba(251,146,60,0.07); }
+  .callout--success { border-color: var(--success); background: rgba(52,211,153,0.07); }
+  .callout--danger  { border-color: var(--danger);  background: rgba(248,113,113,0.07); }
+
+  .check-list { list-style: none; }
+  .check-list li { padding: 5px 0; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .check-list li::before { content: '→'; color: var(--accent); font-family: var(--font-mono); flex-shrink: 0; margin-top: 1px; }
+  .cross-list li::before { content: '✕'; color: var(--danger); }
+  .tick-list  li::before { content: '✓'; color: var(--success); }
+
+  .query-box {
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent2);
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .query-box .q-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  /* ── RETRIEVAL FLOW SPECIFIC ─────────────────────────────── */
+  .rf-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    position: relative;
+    margin-bottom: 6px;
+  }
+  .rf-step-num {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    text-align: center;
+    line-height: 22px;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .rf-step-title { font-weight: 600; font-size: 13px; color: #fff; display: inline; }
+  .rf-step-body  { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.6; }
+  .rf-step-tags  { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .rf-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .rf-tag--vector  { background: rgba(59,130,246,0.18);  color: var(--accent);  }
+  .rf-tag--graph   { background: rgba(34,211,238,0.15);  color: var(--accent2); }
+  .rf-tag--llm     { background: rgba(167,139,250,0.15); color: var(--accent3); }
+  .rf-tag--filter  { background: rgba(251,146,60,0.15);  color: var(--warn);    }
+  .rf-tag--output  { background: rgba(52,211,153,0.15);  color: var(--success); }
+  .rf-connector {
+    width: 2px;
+    height: 16px;
+    background: var(--dim);
+    margin: 0 auto 0 24px;
+    position: relative;
+  }
+  .rf-connector::after {
+    content: '▼';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: var(--dim);
+  }
+  .rf-step.rf-primary   { border-color: var(--accent);  background: rgba(59,130,246,0.06); }
+  .rf-step.rf-graph     { border-color: var(--accent2); background: rgba(34,211,238,0.05); }
+  .rf-step.rf-llm       { border-color: var(--accent3); background: rgba(167,139,250,0.06); }
+  .rf-step.rf-output    { border-color: var(--success); background: rgba(52,211,153,0.05); }
+  .rf-step.rf-warn      { border-color: var(--warn);    background: rgba(251,146,60,0.05); }
+
+  .rf-verdict {
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 16px;
+  }
+  .rf-verdict-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .rf-verdict-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .rf-verdict-key  { color: var(--muted); min-width: 160px; font-size: 12px; }
+  .rf-verdict-val  { color: #fff; font-weight: 500; }
+
+  /* ── DISAMBIGUATION BOX ──────────────────────────────────── */
+  .disambig {
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    line-height: 1.7;
+  }
+  .disambig strong { color: var(--warn); }
+
+  .hero-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .hero-mark-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .hero-meta { text-align: left; }
+  .hero-meta-title { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.15em; }
+  .hero-meta-org   { font-size: 13px; color: var(--muted); }
+
+  footer {
+    padding: 40px 10vw;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .footer-logo { color: var(--accent); font-weight: 600; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  @keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+    70%  { box-shadow: 0 0 0 16px rgba(59,130,246,0); }
+    100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+  }
+  .pulsing { animation: pulse-ring 2.5s ease-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide { opacity: 1; transform: none; transition: none; }
+    .pulsing { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV DOTS (19 slides: 0–18) ───────────────────────────── -->
+<nav class="nav" aria-label="Slide navigation">
+  <button class="nav-dot active" data-target="0"  title="Cover"></button>
+  <button class="nav-dot"        data-target="1"  title="RAG Overview"></button>
+  <button class="nav-dot"        data-target="2"  title="Naive RAG"></button>
+  <button class="nav-dot"        data-target="3"  title="Advanced RAG"></button>
+  <button class="nav-dot"        data-target="4"  title="Agentic RAG"></button>
+  <button class="nav-dot"        data-target="5"  title="GraphRAG Intro"></button>
+  <button class="nav-dot"        data-target="6"  title="How GraphRAG Works"></button>
+  <button class="nav-dot"        data-target="7"  title="MS GraphRAG"></button>
+  <button class="nav-dot"        data-target="8"  title="LightRAG"></button>
+  <button class="nav-dot"        data-target="9"  title="Fast GraphRAG"></button>
+  <button class="nav-dot"        data-target="10" title="Architecture Compare"></button>
+  <button class="nav-dot"        data-target="11" title="MS GraphRAG Retrieval Flow"></button>
+  <button class="nav-dot"        data-target="12" title="LightRAG Retrieval Flow"></button>
+  <button class="nav-dot"        data-target="13" title="Fast GraphRAG Retrieval Flow"></button>
+  <button class="nav-dot"        data-target="14" title="Use Cases"></button>
+  <button class="nav-dot"        data-target="15" title="Benchmarks"></button>
+  <button class="nav-dot"        data-target="16" title="Production Stack"></button>
+  <button class="nav-dot"        data-target="17" title="Trends"></button>
+  <button class="nav-dot"        data-target="18" title="Summary"></button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 0 — HERO                                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide slide--hero visible" id="slide-0">
+  <div class="hero-mark">
+    <div class="hero-mark-icon pulsing">🕸️</div>
+    <div class="hero-meta">
+      <div class="hero-meta-title">ZetaBox · AI Engineering Internship</div>
+      <div class="hero-meta-org">First Task — Technical Presentation</div>
+    </div>
+  </div>
+  <h1>Graph<span class="accent-word">RAG</span></h1>
+  <p class="hero-sub">
+    From flat chunks to structured knowledge graphs — a complete technical deep dive into the RAG landscape, GraphRAG architectures, retrieval flows, and production-ready implementation strategies.
+  </p>
+  <div class="stat-row" style="justify-content:center; max-width: 700px; margin: 0 auto;">
+    <div class="stat">
+      <div class="stat__num" style="color:var(--accent);">4</div>
+      <div class="stat__label">RAG paradigms covered</div>
+    </div>
+    <div class="stat">
+      <div class="stat__num" style="color:var(--accent2);">3</div>
+      <div class="stat__label">GraphRAG architectures, full retrieval flows</div>
+    </div>
+    <div class="stat">
+      <div class="stat__num" style="color:var(--accent3);">83%</div>
+      <div class="stat__label">comprehensiveness gain on global queries</div>
+    </div>
+    <div class="stat">
+      <div class="stat__num" style="color:var(--success);">$33</div>
+      <div class="stat__label">indexing cost today vs $33K in 2024</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 1 — RAG LANDSCAPE                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-1">
+  <div class="slide-badge">01 / 18</div>
+  <div class="eyebrow">The RAG Landscape</div>
+  <h2>Four Paradigms, One Goal</h2>
+  <p>Every RAG system grounds LLM output in retrieved knowledge. What separates them is <em>how</em> they retrieve — and what structures they assume about data.</p>
+  <div class="grid-4" style="margin-top: 28px;">
+    <div class="card card--accent">
+      <span class="card__tag tag--blue">Naive</span>
+      <h3>Basic RAG</h3>
+      <p style="font-size:13px;">Embed → ANN search → generate. Flat chunks, cosine similarity. Works; scales to simple Q&A.</p>
+      <div style="font-family:var(--font-mono);font-size:11px;margin-top:12px;">
+        <span style="color:var(--success);">$0.001 / query</span><br>
+        <span style="color:var(--warn);">~44% factual accuracy</span>
+      </div>
+    </div>
+    <div class="card card--accent2">
+      <span class="card__tag tag--cyan">Advanced</span>
+      <h3>Enhanced RAG</h3>
+      <p style="font-size:13px;">Adds query rewriting, hybrid retrieval (BM25 + dense), reranking. Same backbone, better plumbing.</p>
+      <div style="font-family:var(--font-mono);font-size:11px;margin-top:12px;">
+        <span style="color:var(--success);">$0.002–0.005 / query</span><br>
+        <span style="color:var(--warn);">~63% factual accuracy</span>
+      </div>
+    </div>
+    <div class="card card--accent3">
+      <span class="card__tag tag--purple">Agentic</span>
+      <h3>Agentic RAG</h3>
+      <p style="font-size:13px;">LLM-as-controller. ReAct/CRAG/Self-RAG loops. Self-correcting, tool-using, multi-hop capable.</p>
+      <div style="font-family:var(--font-mono);font-size:11px;margin-top:12px;">
+        <span style="color:var(--warn);">$0.005–0.01 / query</span><br>
+        <span style="color:var(--success);">+8.3 F1 on HotpotQA</span>
+      </div>
+    </div>
+    <div class="card card--accent">
+      <span class="card__tag tag--blue">Graph</span>
+      <h3>GraphRAG</h3>
+      <p style="font-size:13px;">Knowledge graph replaces flat index. Graph traversal + community summaries. Understands relationships.</p>
+      <div style="font-family:var(--font-mono);font-size:11px;margin-top:12px;">
+        <span style="color:var(--warn);">$0.01–0.05 / query</span><br>
+        <span style="color:var(--success);">72–83% on global queries</span>
+      </div>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:28px;">
+    <strong>Key insight:</strong> No single paradigm wins everywhere. The 2025–2026 production consensus is <strong>hybrid routing</strong> — simple queries → vector RAG, multi-hop/thematic → GraphRAG.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 2 — NAIVE RAG                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-2">
+  <div class="slide-badge">02 / 18</div>
+  <div class="eyebrow">Paradigm 1</div>
+  <h2>Naive / Basic RAG</h2>
+  <div class="pipeline" style="margin-bottom:32px;">
+    <div class="pipe-step"><span class="step-num">OFFLINE</span><span class="step-label">Chunk Documents</span><span class="step-sub">~512 tokens</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="step-num">OFFLINE</span><span class="step-label">Embed Chunks</span><span class="step-sub">text-embedding-3</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><span class="step-num">OFFLINE</span><span class="step-label">Store in VectorDB</span><span class="step-sub">pgvector / Qdrant</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step highlight"><span class="step-num">ONLINE</span><span class="step-label">Embed Query</span><span class="step-sub">cosine similarity</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step highlight"><span class="step-num">ONLINE</span><span class="step-label">ANN Search top-k</span><span class="step-sub">HNSW / IVFFlat</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step highlight"><span class="step-num">ONLINE</span><span class="step-label">LLM Generate</span><span class="step-sub">with context</span></div>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3 style="color:var(--success);margin-bottom:10px;">✓ Strengths</h3>
+      <ul class="check-list tick-list">
+        <li>Simplest to implement and deploy</li>
+        <li>Very low latency (~500ms) and cost (~$0.001/query)</li>
+        <li>Works well for simple, single-document factual lookups</li>
+        <li>Linear scaling with corpus size</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color:var(--danger);margin-bottom:10px;">✕ Weaknesses</h3>
+      <ul class="check-list cross-list">
+        <li>Vector similarity ≠ relevance — retrieves noisy chunks</li>
+        <li>Cannot handle multi-hop reasoning across documents</li>
+        <li>Lost-in-the-middle: LLMs degrade on long retrieved contexts</li>
+        <li>Entity relationships are <strong>invisible</strong> — chunks are isolated</li>
+        <li>Only ~44% factual accuracy on CRAG benchmark (2024)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 3 — ADVANCED RAG                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-3">
+  <div class="slide-badge">03 / 18</div>
+  <div class="eyebrow">Paradigm 2</div>
+  <h2>Advanced RAG</h2>
+  <p>Same vector-search backbone, but optimized at every stage — raising factual accuracy from ~44% to ~63%.</p>
+  <div class="grid-3" style="margin-top:24px;margin-bottom:24px;">
+    <div class="card card--accent">
+      <span class="card__tag tag--blue">Pre-Retrieval</span>
+      <ul class="check-list" style="font-size:13px;">
+        <li>Query rewriting</li>
+        <li>Query decomposition</li>
+        <li>HyDE (Hypothetical Document Embedding)</li>
+        <li>Metadata filtering</li>
+      </ul>
+    </div>
+    <div class="card card--accent2">
+      <span class="card__tag tag--cyan">Retrieval-Time</span>
+      <ul class="check-list" style="font-size:13px;">
+        <li>Hybrid search: dense (vector) + sparse (BM25)</li>
+        <li>Ensemble retrieval</li>
+        <li>Multi-index routing</li>
+      </ul>
+    </div>
+    <div class="card card--accent3">
+      <span class="card__tag tag--purple">Post-Retrieval</span>
+      <ul class="check-list" style="font-size:13px;">
+        <li>Cross-encoder reranking (+100–300ms)</li>
+        <li>Contextual compression</li>
+        <li>Iterative / multi-hop retrieval passes</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout callout--warn">
+    <strong>Ceiling:</strong> Advanced RAG is still <em>chunk-based</em>. It cannot answer thematic queries across 5,000 documents ("What are the main themes?"), and multi-hop retrieval remains heuristic and brittle. This is where GraphRAG becomes necessary.
+  </div>
+  <div class="callout callout--success" style="margin-top:10px;">
+    <strong>Best use:</strong> Most production RAG applications — customer support, document Q&A, enterprise search. The recommended starting point before considering graph-based approaches.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 4 — AGENTIC RAG                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-4">
+  <div class="slide-badge">04 / 18</div>
+  <div class="eyebrow">Paradigm 3</div>
+  <h2>Agentic RAG</h2>
+  <p>The LLM is the controller. A dynamic loop replaces the fixed pipeline.</p>
+  <div class="grid-2" style="margin-top:24px;gap:28px;">
+    <div>
+      <div class="card" style="text-align:center;padding:28px;">
+        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:10px;font-size:13px;width:100%;">
+          <div style="background:rgba(59,130,246,0.15);border:1px solid var(--accent);border-radius:8px;padding:10px 20px;color:#93c5fd;font-weight:600;width:100%;">User Query</div>
+          <div style="color:var(--accent);">↓</div>
+          <div style="background:rgba(167,139,250,0.15);border:1px solid var(--accent3);border-radius:8px;padding:10px 20px;color:#c4b5fd;font-weight:600;width:100%;">🤖 LLM Agent — Plan</div>
+          <div style="color:var(--muted);font-size:12px;">decides: retrieve? which tool? enough context?</div>
+          <div style="display:flex;gap:10px;width:100%;">
+            <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:11px;color:var(--muted);">Vector Search</div>
+            <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:11px;color:var(--muted);">SQL Query</div>
+            <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:11px;color:var(--muted);">Web Search</div>
+          </div>
+          <div style="color:var(--accent);">↓ self-reflect</div>
+          <div style="background:rgba(52,211,153,0.12);border:1px solid var(--success);border-radius:8px;padding:8px 20px;color:var(--success);font-weight:600;width:100%;">Answer or Re-plan</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Patterns</h3>
+      <ul class="check-list" style="font-size:13px;margin-bottom:18px;">
+        <li><strong>ReAct</strong> — Reason + Act interleaved steps</li>
+        <li><strong>CRAG</strong> — Corrective RAG, detects poor retrieval</li>
+        <li><strong>Self-RAG</strong> — Self-reflection on retrieval quality</li>
+        <li><strong>Multi-agent</strong> — Specialized agents per retrieval task</li>
+      </ul>
+      <h3 style="margin-bottom:10px;">Frameworks</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <code>LangGraph</code><code>LlamaIndex Agents</code><code>AutoGen</code><code>CrewAI</code>
+      </div>
+      <div class="callout callout--warn" style="margin-top:18px;">
+        <strong>Cost warning:</strong> 3–10× more LLM calls than naive RAG. Requires observability tooling (Langfuse / LangSmith) in production. Non-deterministic — hard to debug.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 5 — GRAPHRAG INTRO                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-5">
+  <div class="slide-badge">05 / 18</div>
+  <div class="eyebrow">Paradigm 4 — The Focus</div>
+  <h2>What Is GraphRAG?</h2>
+  <div class="grid-2" style="margin-top:24px;gap:32px;align-items:start;">
+    <div>
+      <p>Standard RAG treats knowledge as a <strong>bag of chunks</strong> — semantically related by embedding distance, but structurally disconnected.</p>
+      <p>GraphRAG replaces the flat index with a <strong>structured knowledge graph</strong>: entities become nodes, relationships become edges.</p>
+      <div class="query-box" style="margin-top:20px;">
+        <span class="q-label">Vector RAG FAILS on this:</span>
+        "How is Company A connected to the risk flagged in Document B, and which executives overlap?"
+      </div>
+      <div class="query-box">
+        <span class="q-label">GraphRAG ANSWERS this:</span>
+        "What are the primary operational risks identified across all target companies?"
+      </div>
+    </div>
+    <div class="kg-diagram">
+      <div class="kg-node kg-node--main" style="left:42%;top:38%;transform:translate(-50%,-50%)">GraphRAG<br>Core</div>
+      <div class="kg-node kg-node--sec"  style="left:15%;top:18%">Entity<br>Extract</div>
+      <div class="kg-node kg-node--sec"  style="left:72%;top:14%">Leiden<br>Community</div>
+      <div class="kg-node kg-node--sec"  style="left:78%;top:64%">Vector<br>Index</div>
+      <div class="kg-node kg-node--sec"  style="left:10%;top:68%">Graph<br>Store</div>
+      <div class="kg-node kg-node--leaf" style="left:30%;top:6%">Chunk<br>Docs</div>
+      <div class="kg-node kg-node--leaf" style="left:58%;top:78%">LLM<br>Synth</div>
+      <div class="kg-node kg-node--leaf" style="left:3%;top:42%">Neo4j</div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 500 280" preserveAspectRatio="none">
+        <line x1="210" y1="106" x2="75"  y2="50"  stroke="#3b82f6" stroke-width="1" stroke-dasharray="4" opacity="0.4"/>
+        <line x1="210" y1="106" x2="360" y2="39"  stroke="#3b82f6" stroke-width="1" stroke-dasharray="4" opacity="0.4"/>
+        <line x1="210" y1="106" x2="390" y2="179" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4" opacity="0.4"/>
+        <line x1="210" y1="106" x2="50"  y2="190" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4" opacity="0.4"/>
+        <line x1="75"  y1="50"  x2="150" y2="17"  stroke="#a78bfa" stroke-width="1" opacity="0.3"/>
+        <line x1="390" y1="179" x2="290" y2="218" stroke="#a78bfa" stroke-width="1" opacity="0.3"/>
+      </svg>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:28px;">
+    <strong>Core shift:</strong> Instead of "which chunks are <em>semantically similar</em> to my query?" GraphRAG asks "which <em>entities are related</em> to my query entity, and how?" — turning implicit structure into explicit, queryable facts.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 6 — HOW GRAPHRAG WORKS                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-6">
+  <div class="slide-badge">06 / 18</div>
+  <div class="eyebrow">GraphRAG Internals</div>
+  <h2>Indexing + Query Pipeline</h2>
+  <div class="grid-2" style="gap:28px;margin-top:16px;">
+    <div>
+      <h3 style="color:var(--accent2);margin-bottom:14px;">📥 Indexing Pipeline</h3>
+      <div class="pipeline" style="flex-direction:column;overflow:visible;">
+        <div class="pipe-step" style="min-width:0;text-align:left;padding:10px 14px;margin-bottom:4px;"><span class="step-num">STEP 1</span><span class="step-label">Chunk documents (~600 tokens each)</span></div>
+        <div class="pipe-arrow" style="transform:rotate(90deg);padding:2px 0;">↓</div>
+        <div class="pipe-step highlight" style="min-width:0;text-align:left;padding:10px 14px;margin-bottom:4px;"><span class="step-num">STEP 2 — LLM Call per chunk</span><span class="step-label">Extract (entity, relationship, entity) triples</span></div>
+        <div class="pipe-arrow" style="transform:rotate(90deg);padding:2px 0;">↓</div>
+        <div class="pipe-step" style="min-width:0;text-align:left;padding:10px 14px;margin-bottom:4px;"><span class="step-num">STEP 3</span><span class="step-label">Deduplicate entities, weight edges by co-occurrence</span></div>
+        <div class="pipe-arrow" style="transform:rotate(90deg);padding:2px 0;">↓</div>
+        <div class="pipe-step highlight" style="min-width:0;text-align:left;padding:10px 14px;margin-bottom:4px;"><span class="step-num">STEP 4</span><span class="step-label">Leiden community detection → hierarchical clusters</span></div>
+        <div class="pipe-arrow" style="transform:rotate(90deg);padding:2px 0;">↓</div>
+        <div class="pipe-step highlight2" style="min-width:0;text-align:left;padding:10px 14px;"><span class="step-num">STEP 5 — LLM Call per community</span><span class="step-label">Generate community summaries (all levels)</span></div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:var(--accent3);margin-bottom:14px;">🔍 Three Query Modes</h3>
+      <div class="card card--accent" style="margin-bottom:10px;padding:14px 16px;">
+        <span class="card__tag tag--blue">LOCAL SEARCH</span>
+        <p style="font-size:13px;margin:0;">Entity-centric. Embeds query → finds top-k entities → expands to neighborhood (related entities, edges, source chunks) → LLM synthesizes. Best for: <em>specific focused questions</em>.</p>
+      </div>
+      <div class="card card--accent2" style="margin-bottom:10px;padding:14px 16px;">
+        <span class="card__tag tag--cyan">GLOBAL SEARCH</span>
+        <p style="font-size:13px;margin:0;">Community-centric. Retrieves all community reports → map-reduce scoring → aggregated final answer. Best for: <em>"what are the main themes across the entire corpus?"</em></p>
+      </div>
+      <div class="card card--accent3" style="padding:14px 16px;">
+        <span class="card__tag tag--purple">DRIFT SEARCH (Oct 2024)</span>
+        <p style="font-size:13px;margin:0;">Hybrid. Global search → hypothesis + sub-questions → local search per sub-question → 2-pass iterative refinement. Best of both.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 7 — MICROSOFT GRAPHRAG                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-7">
+  <div class="slide-badge">07 / 18</div>
+  <div class="eyebrow">Architecture 1</div>
+  <h2>Microsoft GraphRAG</h2>
+  <div class="grid-2" style="gap:28px;margin-top:16px;">
+    <div>
+      <div class="callout" style="margin-bottom:16px;">
+        <strong>Edge et al., arXiv:2404.16130 (Apr 2024)</strong> — Open-sourced Jul 2024. 29,800+ GitHub stars by Dec 2024. The reference implementation.
+      </div>
+      <p>The <strong>only architecture</strong> that performs pre-computed hierarchical community summarization using the <strong>Leiden algorithm</strong>. Uniquely capable of answering global thematic queries — and uniquely expensive to index.</p>
+      <h3 style="margin-top:20px;margin-bottom:10px;">Signature Properties</h3>
+      <ul class="check-list" style="font-size:13px;">
+        <li>Leiden community detection (better connected clusters than Louvain)</li>
+        <li>Multi-level hierarchy: leaf → mid → root community summaries</li>
+        <li>Community reports act as <em>pre-computed answers</em> to thematic queries</li>
+        <li>Three query modes: Local, Global, DRIFT</li>
+        <li>Storage: graph store (NetworkX/Parquet/Neo4j) + vector store + relational tables</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Cost Reality</h3>
+      <table class="ctable">
+        <thead><tr><th>Corpus</th><th>2024 Cost (GPT-4)</th><th>With LazyGraphRAG</th></tr></thead>
+        <tbody>
+          <tr><td>~100 docs (1M tokens)</td><td style="color:var(--warn);">$100–$500</td><td style="color:var(--success);">$0.10–$0.50</td></tr>
+          <tr><td>~1,000 docs (10M tokens)</td><td style="color:var(--warn);">$1K–$5K</td><td style="color:var(--success);">$1–$5</td></tr>
+          <tr><td>~10,000 docs (5GB)</td><td style="color:var(--danger);">$33,000</td><td style="color:var(--success);">~$33</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout--warn" style="margin-top:16px;">
+        <strong>LazyGraphRAG (Nov 2024)</strong> defers LLM summarization to query time, using lightweight NLP for indexing — reducing cost to <strong>0.1%</strong> of full GraphRAG.
+      </div>
+      <h3 style="margin-top:16px;margin-bottom:8px;">When to use</h3>
+      <ul class="check-list tick-list" style="font-size:13px;">
+        <li>Large corpora needing global thematic queries</li>
+        <li>Budget allows full LLM-heavy indexing</li>
+        <li>Stable corpus (expensive to rebuild)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 8 — LIGHTRAG                                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-8">
+  <div class="slide-badge">08 / 18</div>
+  <div class="eyebrow">Architecture 2</div>
+  <h2>LightRAG</h2>
+  <div class="grid-2" style="gap:28px;margin-top:16px;">
+    <div>
+      <div class="callout" style="margin-bottom:16px;">
+        <strong>Guo et al., arXiv:2410.05779 (Oct 2024)</strong> — EMNLP 2025. Lightweight alternative that skips expensive community clustering entirely.
+      </div>
+      <h3 style="margin-bottom:10px;">Key Design Decision</h3>
+      <p style="font-size:14px;">Instead of pre-computing community summaries, LightRAG stores <code>(entity, relationship)</code> pairs as both graph elements <em>and</em> key-value entries queryable by vector similarity — enabling <strong>dual-level retrieval</strong> without Leiden overhead.</p>
+      <div style="margin-top:18px;display:flex;gap:10px;align-items:stretch;">
+        <div class="card card--accent" style="flex:1;padding:12px 14px;">
+          <span class="card__tag tag--blue">Low-Level</span>
+          <p style="font-size:12px;margin:0;">Entity-specific retrieval — precise, local facts</p>
+        </div>
+        <div class="card card--accent3" style="flex:1;padding:12px 14px;">
+          <span class="card__tag tag--purple">High-Level</span>
+          <p style="font-size:12px;margin:0;">Concept-level retrieval — thematic, abstract queries</p>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Performance vs MS GraphRAG</h3>
+      <div class="bar-chart">
+        <div class="bar-item">
+          <div class="bar-meta"><span>Indexing token cost reduction</span><span>~60% lower</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--success);"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-meta"><span>Query latency reduction</span><span>~2× faster</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--accent2);"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-meta"><span>Multi-domain accuracy (EMNLP 2025)</span><span>Beats MS GraphRAG</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--accent);"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-meta"><span>Global summarization quality</span><span>Good (not excellent)</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:65%;background:var(--accent3);"></div></div>
+        </div>
+      </div>
+      <div class="callout callout--success" style="margin-top:18px;">
+        <strong>Outperforms</strong> NaiveRAG, RQ-RAG, HyDE, and MS GraphRAG across agriculture, CS, legal, and mixed domains. Supports <strong>incremental indexing</strong> natively.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 9 — FAST GRAPHRAG                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-9">
+  <div class="slide-badge">09 / 18</div>
+  <div class="eyebrow">Architecture 3</div>
+  <h2>Fast GraphRAG</h2>
+  <div class="grid-2" style="gap:28px;margin-top:16px;">
+    <div>
+      <div class="callout" style="margin-bottom:16px;">
+        <strong>CircleMind AI, 2024</strong> — No published academic paper. Sourced from official GitHub repository and DeepWiki codebase analysis.
+      </div>
+      <h3 style="margin-bottom:10px;">PageRank-Powered Retrieval</h3>
+      <p style="font-size:14px;">Replaces Leiden community summaries and vector-only matching with <strong>Personalized PageRank traversal</strong> over the entity graph. Query entities seed the graph; relevance propagates through topology; chunks are scored by propagation — never directly searched.</p>
+      <h3 style="margin-top:18px;margin-bottom:10px;">Indexing Structures</h3>
+      <ul class="check-list" style="font-size:13px;">
+        <li>Knowledge graph stored as igraph sparse matrix (entity nodes + relation edges)</li>
+        <li>HNSW vector index over entity description embeddings (<code>HNSWVectorStorage</code>)</li>
+        <li>Entities-to-relationships sparse matrix (E→R)</li>
+        <li>Relationships-to-chunks sparse matrix (R→C)</li>
+        <li>No community detection. No pre-computed community summaries.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Trade-offs</h3>
+      <ul class="check-list tick-list" style="font-size:13px;margin-bottom:16px;">
+        <li>Very fast indexing — no LLM summarization overhead beyond entity extraction</li>
+        <li>Incremental updates supported natively — designed for dynamic corpora</li>
+        <li>PageRank gives graph-topology-aware scoring: connected entities rank higher</li>
+        <li>Interpretable: scoring path entities → relationships → chunks is fully traceable</li>
+      </ul>
+      <ul class="check-list cross-list" style="font-size:13px;margin-bottom:16px;">
+        <li>No global summarization capability (no community hierarchy)</li>
+        <li>Less battle-tested at large scale vs LightRAG / MS GraphRAG</li>
+        <li>No peer-reviewed paper — architecture sourced from codebase</li>
+      </ul>
+      <div class="callout callout--success">
+        <strong>Best for:</strong> Production systems with frequently changing corpora where rebuild costs are prohibitive, and queries are entity-centric rather than thematic.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 10 — ARCHITECTURE COMPARISON                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-10">
+  <div class="slide-badge">10 / 18</div>
+  <div class="eyebrow">Side-by-Side</div>
+  <h2>Architecture Comparison</h2>
+  <div style="overflow-x:auto;margin-top:20px;">
+    <table class="ctable">
+      <thead>
+        <tr><th>Feature</th><th>MS GraphRAG</th><th>LightRAG</th><th>Fast GraphRAG</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Community detection</td>
+          <td><span class="check">✓</span> Leiden (multi-level)</td>
+          <td><span class="cross">✗</span> None</td>
+          <td><span class="cross">✗</span> None</td>
+        </tr>
+        <tr>
+          <td>Incremental updates</td>
+          <td><span class="cross">✗</span> Expensive rebuild</td>
+          <td><span class="check">✓</span> Native</td>
+          <td><span class="check">✓</span> Native</td>
+        </tr>
+        <tr>
+          <td>Global thematic queries</td>
+          <td><span class="check">✓</span> Excellent</td>
+          <td><span class="check">✓</span> Good</td>
+          <td><span class="cross">✗</span> Weak</td>
+        </tr>
+        <tr>
+          <td>Local / entity queries</td>
+          <td><span class="check">✓</span> Good</td>
+          <td><span class="check">✓</span> Excellent</td>
+          <td><span class="check">✓</span> Good</td>
+        </tr>
+        <tr>
+          <td>Indexing cost</td>
+          <td><span class="danger-word">High</span></td>
+          <td><span class="partial">~60% lower</span></td>
+          <td><span class="success-word">Very low</span></td>
+        </tr>
+        <tr>
+          <td>First retrieval signal</td>
+          <td>Entity embed (local) / All communities (global)</td>
+          <td>LLM keyword → dual vector search</td>
+          <td>LLM entity extract → HNSW + PageRank</td>
+        </tr>
+        <tr>
+          <td>Chunk access method</td>
+          <td>Graph traversal from entities</td>
+          <td>KV lookup (entity/rel → chunk)</td>
+          <td>Score propagation (E→R→C matrices)</td>
+        </tr>
+        <tr>
+          <td>Production readiness</td>
+          <td><span class="success-word">High</span></td>
+          <td><span class="success-word">High</span></td>
+          <td><span class="warn-word">Medium</span></td>
+        </tr>
+        <tr>
+          <td>Academic paper</td>
+          <td><span class="check">✓</span> arXiv:2404.16130</td>
+          <td><span class="check">✓</span> arXiv:2410.05779 / EMNLP 2025</td>
+          <td><span class="cross">✗</span> Codebase only</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:20px;">
+    <strong>Core finding:</strong> All three systems are <em>entity-first</em>, not chunk-first. The vector search in each targets the entity or relation layer — never raw chunks directly. Chunks are always downstream of entity retrieval.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 11 — MS GRAPHRAG RETRIEVAL FLOW                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-11">
+  <div class="slide-badge">11 / 18</div>
+  <div class="eyebrow">Retrieval Flow Deep Dive · System 1</div>
+  <h2>Microsoft GraphRAG — Query-Time Pipeline</h2>
+
+  <div class="callout callout--warn" style="margin-bottom:20px;">
+    <strong>Source note:</strong> The original Edge et al. (2024) paper describes <em>only global search</em>. Local search was added in the implementation and is documented in official docs (<code>microsoft.github.io/graphrag</code>), not the paper. Many blog posts incorrectly attribute both modes to the paper.
+  </div>
+
+  <div class="grid-2" style="gap:24px;">
+
+    <!-- LOCAL SEARCH -->
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <span class="card__tag tag--blue" style="margin:0;">LOCAL SEARCH</span>
+        <span style="font-size:12px;color:var(--muted);">entity-centric, specific questions</span>
+      </div>
+
+      <div class="rf-step rf-primary">
+        <div><span class="rf-step-num" style="background:var(--accent);color:#fff;">1</span><span class="rf-step-title">Embed Query</span></div>
+        <div class="rf-step-body">Query string is embedded using <code>text-embedding-3-small</code>. This produces the initial retrieval vector. No keyword extraction, no LLM call at this stage.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--vector">VECTOR</span><span class="rf-tag rf-tag--output">First signal</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-primary">
+        <div><span class="rf-step-num" style="background:var(--accent);color:#fff;">2</span><span class="rf-step-title">ANN Search — Entity Description Embeddings</span></div>
+        <div class="rf-step-body">Vector search targets the <strong>entity description embedding store</strong>, not the chunk embedding store. Default top-k = 10 entities. This is the fundamental difference from naive RAG: the ANN index is over entity descriptions, not raw text chunks.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--vector">VECTOR</span><span class="rf-tag rf-tag--filter">Entity space, not chunk space</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-graph">
+        <div><span class="rf-step-num" style="background:var(--accent2);color:var(--bg);">3</span><span class="rf-step-title">Graph Expansion — 4-Way Mapping</span></div>
+        <div class="rf-step-body">Retrieved entities seed four parallel graph lookups: <strong>(a)</strong> entity → text unit mappings → candidate chunks; <strong>(b)</strong> entity → community report mappings → candidate summaries; <strong>(c)</strong> entity → related entity mappings → neighbor entities; <strong>(d)</strong> entity → covariate mappings → structured claims. All are graph lookups, not vector searches.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--graph">GRAPH TRAVERSAL</span><span class="rf-tag rf-tag--filter">No vector search in this step</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step">
+        <div><span class="rf-step-num" style="background:var(--dim);color:#fff;">4</span><span class="rf-step-title">Token-Budget Ranking + Filtering</span></div>
+        <div class="rf-step-body">All candidates from step 3 are ranked by a priority score and iteratively added to the context window until the token limit is reached. The exact scoring formula (similarity score only, or also graph degree) is <em>not explicitly specified in source</em>.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--filter">PRIORITY RANKING</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-output">
+        <div><span class="rf-step-num" style="background:var(--success);color:var(--bg);">5</span><span class="rf-step-title">LLM Generates Answer</span></div>
+        <div class="rf-step-body">Assembled context (entities + relationships + chunks + community summaries) passed to LLM for synthesis.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--llm">LLM</span><span class="rf-tag rf-tag--output">Final answer</span></div>
+      </div>
+    </div>
+
+    <!-- GLOBAL SEARCH -->
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <span class="card__tag tag--cyan" style="margin:0;">GLOBAL SEARCH</span>
+        <span style="font-size:12px;color:var(--muted);">thematic, corpus-wide questions</span>
+      </div>
+
+      <div class="rf-step rf-warn">
+        <div><span class="rf-step-num" style="background:var(--warn);color:var(--bg);">1</span><span class="rf-step-title">No Retrieval Signal — Broadcast All Communities</span></div>
+        <div class="rf-step-body"><strong>There is no vector search in global search.</strong> All community summaries at a chosen hierarchy level are retrieved unconditionally. The paper is explicit: community summaries are shuffled and partitioned into chunks of pre-specified token size. No entity lookup, no ANN search.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--filter">NO VECTOR SEARCH</span><span class="rf-tag rf-tag--filter">No entity lookup</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-llm">
+        <div><span class="rf-step-num" style="background:var(--accent3);color:#fff;">2</span><span class="rf-step-title">Map Phase — LLM Scores Each Community</span></div>
+        <div class="rf-step-body">LLM processes each community summary chunk in parallel. For each, it generates a partial answer AND a helpfulness score (0–100). Chunks scoring 0 are filtered out. This is the only "selection" mechanism — done by the LLM, not by vector similarity.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--llm">LLM × N communities</span><span class="rf-tag rf-tag--filter">Post-hoc scoring</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-llm">
+        <div><span class="rf-step-num" style="background:var(--accent3);color:#fff;">3</span><span class="rf-step-title">Reduce Phase — Aggregate Top-Scored Answers</span></div>
+        <div class="rf-step-body">Intermediate answers sorted by score descending. LLM iteratively adds them to a new context window until the token limit is reached. Final LLM call synthesizes all top-scored partial answers into a single global answer.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--llm">LLM</span><span class="rf-tag rf-tag--output">Final answer</span></div>
+      </div>
+
+      <div class="rf-connector"></div>
+      <div class="disambig">
+        <strong>Note:</strong> Chunks are <strong>not retrieved at all</strong> in global search. The unit of context is community summaries, not source text. Community report embeddings exist in the implementation but are not used for pre-filtering in the original paper's global search algorithm.
+      </div>
+
+      <div class="rf-verdict" style="margin-top:14px;">
+        <div class="rf-verdict-label">Verdict</div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Local — first retrieval signal</span><span class="rf-verdict-val accent-word">Vector search on entity embeddings</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Global — first retrieval signal</span><span class="rf-verdict-val warn-word">None — all communities broadcast</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Mode</span><span class="rf-verdict-val">Entity-first (local) / Community-broadcast (global)</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Chunks accessed via</span><span class="rf-verdict-val accent2-word">Graph traversal from entity seeds</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Confidence</span><span class="rf-verdict-val success-word">High — primary paper + official docs</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 12 — LIGHTRAG RETRIEVAL FLOW                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-12">
+  <div class="slide-badge">12 / 18</div>
+  <div class="eyebrow">Retrieval Flow Deep Dive · System 2</div>
+  <h2>LightRAG — Query-Time Pipeline</h2>
+
+  <div class="callout" style="margin-bottom:20px;">
+    <strong>Source:</strong> Guo et al., EMNLP 2025 (arXiv:2410.05779) — full paper, Section 3.2. All pipeline steps are sourced verbatim from the formal algorithm description.
+  </div>
+
+  <div class="grid-2" style="gap:24px;">
+    <div>
+      <div class="rf-step rf-llm">
+        <div><span class="rf-step-num" style="background:var(--accent3);color:#fff;">1</span><span class="rf-step-title">LLM Keyword Extraction</span></div>
+        <div class="rf-step-body">The <strong>first action is an LLM call</strong>, not a vector search. The LLM processes the query and extracts two distinct keyword sets: <strong>local query keywords k(l)</strong> (specific named entities, concrete concepts) and <strong>global query keywords k(g)</strong> (abstract themes, high-level concepts). This pre-processing step is unique to LightRAG — neither MS GraphRAG local search nor naive RAG do this.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--llm">LLM CALL</span><span class="rf-tag rf-tag--output">First signal — precedes all retrieval</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-primary">
+        <div><span class="rf-step-num" style="background:var(--accent);color:#fff;">2</span><span class="rf-step-title">Dual Parallel Vector Search</span></div>
+        <div class="rf-step-body"><strong>Two vector searches run in parallel</strong> against two separate indexes:
+          <br><br>→ <strong>Low-level search:</strong> k(l) keywords matched against the entity name/description index. Targets specific entity nodes.
+          <br><br>→ <strong>High-level search:</strong> k(g) keywords matched against the relation global theme key index. Targets relationship edges that carry LLM-generated global theme descriptors (assigned at indexing time).
+          <br><br>Neither index contains raw chunks. The entity index stores entity descriptions keyed by entity name. The relation index stores relationship descriptions keyed by LLM-enriched global theme phrases.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--vector">VECTOR × 2 (parallel)</span><span class="rf-tag rf-tag--filter">Entity index + Relation index</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-graph">
+        <div><span class="rf-step-num" style="background:var(--accent2);color:var(--bg);">3</span><span class="rf-step-title">1-Hop Graph Neighbor Expansion</span></div>
+        <div class="rf-step-body">For each retrieved entity node <em>v</em> and each retrieved relation edge <em>e</em>, the system collects their <strong>one-hop neighbors</strong>: N<sub>v</sub> (nodes adjacent to retrieved nodes) and N<sub>e</sub> (nodes adjacent to retrieved edges). This enriches the candidate set without deep multi-hop traversal. The formal set is: {v<sub>i</sub> | v<sub>i</sub> ∈ V ∧ (v<sub>i</sub> ∈ N<sub>v</sub> ∨ v<sub>i</sub> ∈ N<sub>e</sub>)}.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--graph">GRAPH TRAVERSAL</span><span class="rf-tag rf-tag--filter">1-hop only (not deep)</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step">
+        <div><span class="rf-step-num" style="background:var(--dim);color:#fff;">4</span><span class="rf-step-title">Context Assembly from KV Store</span></div>
+        <div class="rf-step-body">Chunks are <strong>never independently vector-searched</strong>. They appear in context because each entity and relation key-value pair stores a "value" containing the relevant chunk excerpts alongside the entity/relation description. Context = entity descriptions + relationship descriptions + their associated chunk excerpts, assembled from the KV structure.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--graph">KV LOOKUP</span><span class="rf-tag rf-tag--filter">Chunks as values, not targets</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-output">
+        <div><span class="rf-step-num" style="background:var(--success);color:var(--bg);">5</span><span class="rf-step-title">LLM Generates Answer</span></div>
+        <div class="rf-step-body">Assembled context passed to the generation LLM. The paper states: "Instead of retrieving chunks as in conventional RAG, we concentrate on retrieving entities and relationships. This approach markedly reduces retrieval overhead compared to the community-based traversal method used in GraphRAG."</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--llm">LLM</span><span class="rf-tag rf-tag--output">Final answer</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="disambig" style="margin-bottom:16px;">
+        <strong>Blog misconception to correct:</strong> Many posts describe LightRAG as routing between low-level (specific queries) and high-level (abstract queries) as if only one runs per query. The paper's Section 3.2 describes both levels running for any given query. The exact routing logic — always-both vs. classifier-based — is <em>not explicitly specified in the paper</em>. The formal description implies parallel execution.
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;font-family:var(--font-mono);font-size:11px;line-height:1.9;margin-bottom:16px;">
+        <div style="color:var(--muted);margin-bottom:8px;font-size:10px;letter-spacing:0.12em;">INDEXING STRUCTURES (what exists at query time)</div>
+        <div><span style="color:var(--accent);">KG</span> — entity nodes + relationship edges (deduplicated)</div>
+        <div><span style="color:var(--accent);">VectorIdx[1]</span> — entity name/description embeddings (low-level)</div>
+        <div><span style="color:var(--accent);">VectorIdx[2]</span> — relation global theme key embeddings (high-level)</div>
+        <div><span style="color:var(--accent2);">KV Store</span> — {entity/rel key → (description, chunk_excerpts)}</div>
+        <div style="color:var(--danger);margin-top:6px;">No community store. No community summaries.</div>
+      </div>
+
+      <div class="rf-verdict">
+        <div class="rf-verdict-label">Verdict</div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">First retrieval signal</span><span class="rf-verdict-val accent3-word">LLM keyword extraction</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Vector search</span><span class="rf-verdict-val accent-word">Dual parallel (entity + relation indexes)</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Query entities extracted?</span><span class="rf-verdict-val">Yes — by LLM (k(l) keywords), not embedding-based</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">How chunks are retrieved</span><span class="rf-verdict-val accent2-word">KV lookup — chunk excerpts are values paired with entity/rel keys</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Graph traversal depth</span><span class="rf-verdict-val">1-hop neighbor expansion only</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Communities used?</span><span class="rf-verdict-val danger-word">None — no community layer exists</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Mode</span><span class="rf-verdict-val">LLM-keyword-first → dual-vector → graph-expand</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Confidence</span><span class="rf-verdict-val success-word">High — full EMNLP 2025 paper verified</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 13 — FAST GRAPHRAG RETRIEVAL FLOW                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-13">
+  <div class="slide-badge">13 / 18</div>
+  <div class="eyebrow">Retrieval Flow Deep Dive · System 3</div>
+  <h2>Fast GraphRAG — Query-Time Pipeline</h2>
+
+  <div class="callout" style="margin-bottom:20px;">
+    <strong>Source:</strong> CircleMind official GitHub repository + DeepWiki codebase analysis (query pipeline page). No academic paper exists. Confidence: High for architecture; Medium for precise internal hyperparameters.
+  </div>
+
+  <div class="grid-2" style="gap:24px;">
+    <div>
+      <div class="rf-step rf-llm">
+        <div><span class="rf-step-num" style="background:var(--accent3);color:#fff;">1</span><span class="rf-step-title">LLM Entity Extraction — Named + Generic</span></div>
+        <div class="rf-step-body">The <strong>first action is an LLM call</strong> via <code>extract_entities_from_query()</code>. The LLM identifies two distinct entity categories using structured Pydantic output:
+          <br><br>→ <strong>Named entities</strong>: specific proper nouns explicitly mentioned (e.g., "Scrooge", "OpenAI")
+          <br><br>→ <strong>Generic entities</strong>: general concepts or types (e.g., "person", "character", "company")
+          <br><br>This dual taxonomy feeds two different HNSW search strategies in the next step.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--llm">LLM CALL</span><span class="rf-tag rf-tag--output">First signal — Pydantic structured output</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-primary">
+        <div><span class="rf-step-num" style="background:var(--accent);color:#fff;">2</span><span class="rf-step-title">HNSW Vector Search — Differentiated by Entity Type</span></div>
+        <div class="rf-step-body">Query string, named entities, and generic entities are all converted to embeddings. Three HNSW searches run with <strong>different top-k and threshold settings</strong>:
+          <br><br>→ Named entities: <code>top_k=1</code>, threshold=<strong>0.7</strong> (tight — exact match intended)
+          <br><br>→ Generic entities: <code>top_k=20</code>, threshold=<strong>0.5</strong> (broad — concept matching)
+          <br><br>→ Raw query: <code>top_k=20</code>, threshold=<strong>0.5</strong> (broad fallback)
+          <br><br>All searches are against the <strong>entity description embedding index</strong> — not a chunk index.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--vector">HNSW × 3 strategies</span><span class="rf-tag rf-tag--filter">Entity index only</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-graph">
+        <div><span class="rf-step-num" style="background:var(--accent2);color:var(--bg);">3</span><span class="rf-step-title">PageRank — Graph Structure Scoring</span></div>
+        <div class="rf-step-body">Vector similarity scores from step 2 are converted into a sparse matrix and passed to <code>graph_storage.score_nodes()</code>, which applies <strong>Personalized PageRank</strong>.
+          <br><br>PageRank re-weights the initial vector scores using graph topology: <em>highly connected entities that are also similar to the query receive boosted scores</em>. Entities with many relevant relationships outrank isolated entities with the same similarity score.
+          <br><br>This is the core differentiator of Fast GraphRAG — topology-aware relevance scoring on top of vector similarity.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--graph">PAGERANK</span><span class="rf-tag rf-tag--filter">Topology-weighted entity scores</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-graph">
+        <div><span class="rf-step-num" style="background:var(--accent2);color:var(--bg);">4</span><span class="rf-step-title">Score Propagation — E→R→C Matrix Multiplication</span></div>
+        <div class="rf-step-body">PageRank entity scores propagate through two sparse matrices:
+          <br><br>→ <strong>Entity → Relationship</strong>: <code>relationship_scores = entity_scores × E→R_matrix</code>. Relationships that connect high-scoring entities receive high scores.
+          <br><br>→ <strong>Relationship → Chunk</strong>: <code>chunk_scores = relationship_scores × R→C_matrix</code>. Chunks that contain high-scoring relationships receive high scores.
+          <br><br><strong>Chunks are never directly vector-searched.</strong> Their scores are derived entirely by propagation from entity scores through graph structure.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--graph">MATRIX PROPAGATION</span><span class="rf-tag rf-tag--filter">E→R→C chain</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step">
+        <div><span class="rf-step-num" style="background:var(--dim);color:#fff;">5</span><span class="rf-step-title">Token-Budget Truncation + Context Assembly</span></div>
+        <div class="rf-step-body">Top-scored entities, relationships, and chunks are selected until the token budget is reached. All three are included in the final context — the assembly combines entity descriptions, relationship descriptions, and chunk text for a complete multi-level context.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--filter">SCORE RANKING</span><span class="rf-tag rf-tag--output">Token-budget cutoff</span></div>
+      </div>
+      <div class="rf-connector"></div>
+
+      <div class="rf-step rf-output">
+        <div><span class="rf-step-num" style="background:var(--success);color:var(--bg);">6</span><span class="rf-step-title">LLM Generates Answer</span></div>
+        <div class="rf-step-body">Assembled multi-level context passed to LLM. The reasoning path is fully traceable: entities → scored relationships → scored chunks.</div>
+        <div class="rf-step-tags"><span class="rf-tag rf-tag--llm">LLM</span><span class="rf-tag rf-tag--output">Final answer</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;font-family:var(--font-mono);font-size:11px;line-height:1.9;margin-bottom:16px;">
+        <div style="color:var(--muted);margin-bottom:8px;font-size:10px;letter-spacing:0.12em;">INDEXING STRUCTURES (what exists at query time)</div>
+        <div><span style="color:var(--accent);">KG</span> — entity nodes + relation edges (igraph sparse matrix)</div>
+        <div><span style="color:var(--accent);">HNSW</span> — entity description embeddings (<code>HNSWVectorStorage</code>)</div>
+        <div><span style="color:var(--accent2);">E→R matrix</span> — entities-to-relationships sparse matrix</div>
+        <div><span style="color:var(--accent2);">R→C matrix</span> — relationships-to-chunks sparse matrix</div>
+        <div><span style="color:var(--accent3);">Chunk store</span> — raw chunk text (scored indirectly)</div>
+        <div style="color:var(--danger);margin-top:6px;">No community detection. No community summaries.</div>
+      </div>
+
+      <div class="disambig" style="margin-bottom:16px;">
+        <strong>How PageRank differs from naive vector search:</strong> In naive RAG, the most similar chunk wins. In Fast GraphRAG, the most similar <em>and most connected</em> entity wins — an entity with 20 relevant relationships scores higher than an equally similar entity with 2 relationships. This is topology-aware retrieval.
+      </div>
+
+      <div class="disambig" style="margin-bottom:16px;">
+        <strong>Unresolved — not explicitly specified in source:</strong> Exact PageRank damping factor and convergence criteria used at query time. The codebase docs describe the mechanism but don't surface these hyperparameters.
+      </div>
+
+      <div class="rf-verdict">
+        <div class="rf-verdict-label">Verdict</div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">First retrieval signal</span><span class="rf-verdict-val accent3-word">LLM entity extraction (named + generic)</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Vector search</span><span class="rf-verdict-val accent-word">HNSW on entity embeddings — 3 strategies</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">PageRank role</span><span class="rf-verdict-val">Re-weights vector scores by graph topology — not a standalone retrieval step</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">How chunks are retrieved</span><span class="rf-verdict-val accent2-word">Score propagation: E→R→C matrix multiplication</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Direct chunk vector search?</span><span class="rf-verdict-val danger-word">Never</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Communities used?</span><span class="rf-verdict-val danger-word">None — no community layer exists</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Mode</span><span class="rf-verdict-val">Entity-first (vector + graph topology) → propagation to chunks</span></div>
+        <div class="rf-verdict-row"><span class="rf-verdict-key">Confidence</span><span class="rf-verdict-val warn-word">High (architecture) / Medium (hyperparameters)</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 14 — USE CASES                                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-14">
+  <div class="slide-badge">14 / 18</div>
+  <div class="eyebrow">Real-World Applications</div>
+  <h2>Where GraphRAG Delivers</h2>
+  <div class="grid-2" style="margin-top:20px;gap:16px;">
+    <div class="card card--accent">
+      <span class="card__icon">🧬</span>
+      <span class="card__tag tag--blue">Biomedical</span>
+      <h3>Life Sciences</h3>
+      <ul class="check-list" style="font-size:13px;">
+        <li>Drug discovery — traverse drug→target→pathway chains</li>
+        <li>Cedars-Sinai: 1.6M-edge Alzheimer's KG (Memgraph, 2024)</li>
+        <li>Precina Health: 1% monthly HbA1c reduction via GraphRAG clinical decision support</li>
+        <li>Complex clinical queries across EHR data</li>
+      </ul>
+    </div>
+    <div class="card card--accent2">
+      <span class="card__icon">⚖️</span>
+      <span class="card__tag tag--cyan">Legal</span>
+      <h3>Legal Analysis</h3>
+      <ul class="check-list" style="font-size:13px;">
+        <li>~90% precision in clause classification (IEEE Trans. AI, 2025)</li>
+        <li>Cross-jurisdiction precedent mapping (EU/UK/US)</li>
+        <li>Regulatory compliance gap analysis via ontology-based KGs</li>
+        <li>CBR-RAG: case-based reasoning over legal knowledge graphs</li>
+      </ul>
+    </div>
+    <div class="card card--accent3">
+      <span class="card__icon">📈</span>
+      <span class="card__tag tag--purple">Financial</span>
+      <h3>Finance &amp; Risk</h3>
+      <ul class="check-list" style="font-size:13px;">
+        <li>AML / fraud detection: traversing transaction relationship rings</li>
+        <li>Credit risk: corporate hierarchies + market signals</li>
+        <li>90%+ accuracy on KPI queries vs 0% for vector RAG (Salfati 2025)</li>
+        <li>360° portfolio intelligence via ownership graph traversal</li>
+      </ul>
+    </div>
+    <div class="card card--success">
+      <span class="card__icon">🏢</span>
+      <span class="card__tag tag--green">Enterprise</span>
+      <h3>Enterprise Knowledge</h3>
+      <ul class="check-list" style="font-size:13px;">
+        <li>Supply chain: hidden dependency analysis across supplier networks</li>
+        <li>IT/DevOps: multi-hop incidents — "what services affected by all incidents involving Service A?"</li>
+        <li>HR &amp; org intelligence across skill + project graphs</li>
+        <li>Microsoft Discovery (GraphRAG on Azure)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 15 — BENCHMARKS                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-15">
+  <div class="slide-badge">15 / 18</div>
+  <div class="eyebrow">Performance</div>
+  <h2>Benchmarks &amp; Evaluation</h2>
+  <div class="grid-2" style="gap:28px;margin-top:20px;">
+    <div>
+      <h3 style="margin-bottom:16px;">Key Numbers</h3>
+      <div class="stat-row" style="flex-direction:column;gap:10px;">
+        <div class="stat" style="display:flex;align-items:center;gap:16px;padding:12px 18px;">
+          <div class="stat__num" style="color:var(--accent);font-size:1.6rem;">72–83%</div>
+          <div class="stat__label">comprehensiveness on global queries vs vector RAG<br><small style="color:var(--muted);">Microsoft Research, Edge et al. 2024</small></div>
+        </div>
+        <div class="stat" style="display:flex;align-items:center;gap:16px;padding:12px 18px;">
+          <div class="stat__num" style="color:var(--accent2);font-size:1.6rem;">3.4×</div>
+          <div class="stat__label">accuracy improvement on enterprise benchmarks<br><small style="color:var(--muted);">Diffbot KG-LM Benchmark 2023</small></div>
+        </div>
+        <div class="stat" style="display:flex;align-items:center;gap:16px;padding:12px 18px;">
+          <div class="stat__num" style="color:var(--success);font-size:1.6rem;">80%</div>
+          <div class="stat__label">accuracy vs 50% for traditional RAG on complex queries<br><small style="color:var(--muted);">Lettria/AWS, Dec 2024</small></div>
+        </div>
+        <div class="stat" style="display:flex;align-items:center;gap:16px;padding:12px 18px;">
+          <div class="stat__num" style="color:var(--warn);font-size:1.6rem;">2.3×</div>
+          <div class="stat__label">higher latency on simple factoid lookups (HotpotQA)<br><small style="color:var(--muted);">arXiv:2506.05690</small></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Evaluation Metrics</h3>
+      <table class="ctable" style="font-size:12px;">
+        <thead><tr><th>Metric</th><th>Measures</th><th>Primary use</th></tr></thead>
+        <tbody>
+          <tr><td>Faithfulness</td><td>Hallucination rate</td><td>All RAG types</td></tr>
+          <tr><td>Answer Relevance</td><td>On-topic rate</td><td>All RAG types</td></tr>
+          <tr><td>Context Precision</td><td>Retrieval noise</td><td>Naive / Advanced</td></tr>
+          <tr><td>Comprehensiveness</td><td>Breadth of answer</td><td>GraphRAG global</td></tr>
+          <tr><td>Multi-hop Accuracy</td><td>Chain-of-reasoning</td><td>GraphRAG / Agentic</td></tr>
+          <tr><td>Entity F1</td><td>Named entity recall</td><td>GraphRAG extraction quality</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout--warn" style="margin-top:14px;font-size:13px;">
+        <strong>arXiv:2506.05690 finding:</strong> GraphRAG benefits are <em>query-type-dependent</em>. On simple factoids, vector RAG is competitive or superior. GraphRAG's gains concentrate in multi-hop and global query types — exactly where vector RAG fundamentally fails.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 16 — PRODUCTION STACK                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-16">
+  <div class="slide-badge">16 / 18</div>
+  <div class="eyebrow">Implementation</div>
+  <h2>Production Tech Stack</h2>
+  <div class="grid-2" style="gap:28px;margin-top:20px;">
+    <div>
+      <div class="grid-2" style="gap:10px;">
+        <div class="card" style="padding:14px;">
+          <div class="card__tag tag--blue">Document Ingestion</div>
+          <p style="font-size:12px;margin:6px 0 0;color:var(--muted);">PDF/Word/HTML → Apache Tika / Unstructured → Text chunks</p>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="card__tag tag--purple">Entity Extraction</div>
+          <p style="font-size:12px;margin:6px 0 0;color:var(--muted);">GPT-4o or Claude Sonnet — extracts (entity, relation, entity) triples per chunk</p>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="card__tag tag--cyan">Graph Store</div>
+          <p style="font-size:12px;margin:6px 0 0;color:var(--muted);">Small: NetworkX · Medium: Neo4j · Large: Cosmos DB / Neptune / Memgraph</p>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="card__tag tag--green">Vector Store</div>
+          <p style="font-size:12px;margin:6px 0 0;color:var(--muted);">pgvector · Qdrant · Weaviate · Azure AI Search · Pinecone</p>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="card__tag tag--orange">Observability</div>
+          <p style="font-size:12px;margin:6px 0 0;color:var(--muted);">Langfuse · LangSmith · Azure AI Studio</p>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="card__tag tag--blue">Orchestration</div>
+          <p style="font-size:12px;margin:6px 0 0;color:var(--muted);">LangChain · MS GraphRAG CLI · LightRAG Python SDK</p>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;">Hybrid Routing Architecture</h3>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;font-family:var(--font-mono);font-size:12px;line-height:2;">
+        <div style="text-align:center;color:var(--accent2);margin-bottom:8px;">Incoming Query</div>
+        <div style="text-align:center;color:var(--muted);">↓</div>
+        <div style="text-align:center;background:rgba(167,139,250,0.12);border:1px solid var(--accent3);border-radius:6px;padding:6px;color:#c4b5fd;margin:6px 0;">Adaptive Classifier Router</div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <div style="flex:1;background:rgba(59,130,246,0.1);border:1px solid var(--accent);border-radius:6px;padding:10px;text-align:center;">
+            <div style="color:var(--accent);font-size:10px;margin-bottom:4px;">FACTUAL</div>
+            <div style="color:#93c5fd;">Vector RAG</div>
+            <div style="color:var(--muted);font-size:10px;margin-top:4px;">Low cost · ~500ms</div>
+          </div>
+          <div style="flex:1;background:rgba(34,211,238,0.08);border:1px solid var(--accent2);border-radius:6px;padding:10px;text-align:center;">
+            <div style="color:var(--accent2);font-size:10px;margin-bottom:4px;">MULTI-HOP</div>
+            <div style="color:#67e8f9;">GraphRAG</div>
+            <div style="color:var(--muted);font-size:10px;margin-top:4px;">High quality · ~2–5s</div>
+          </div>
+          <div style="flex:1;background:rgba(167,139,250,0.08);border:1px solid var(--accent3);border-radius:6px;padding:10px;text-align:center;">
+            <div style="color:var(--accent3);font-size:10px;margin-bottom:4px;">COMPLEX</div>
+            <div style="color:#c4b5fd;">Agentic</div>
+            <div style="color:var(--muted);font-size:10px;margin-top:4px;">Max quality · 5–15s</div>
+          </div>
+        </div>
+      </div>
+      <div class="callout callout--success" style="margin-top:14px;font-size:13px;">
+        <strong>2025–2026 consensus:</strong> Hybrid routing is the de facto production standard. Don't force every query through the same expensive pipeline.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 17 — TRENDS                                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-17">
+  <div class="slide-badge">17 / 18</div>
+  <div class="eyebrow">Research Directions</div>
+  <h2>Where the Field Is Heading</h2>
+  <div class="grid-2" style="gap:24px;margin-top:20px;">
+    <div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-date">Oct 2024</div>
+          <div class="tl-title">LightRAG — EMNLP 2025</div>
+          <div class="tl-desc">Dual-level KG-RAG, 60% lower cost, incremental indexing, beats MS GraphRAG on EMNLP benchmark</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">Nov 2024</div>
+          <div class="tl-title">LazyGraphRAG</div>
+          <div class="tl-desc">Deferred summarization — 0.1% of MS GraphRAG indexing cost, same global search quality</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">2025</div>
+          <div class="tl-title">HippoRAG 2</div>
+          <div class="tl-desc">Personalized PageRank + passage embeddings — MS GraphRAG quality at 10–30× lower cost and 6–13× lower latency</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">2025</div>
+          <div class="tl-title">Agentic + Graph convergence</div>
+          <div class="tl-desc">KG-RAG-Agent (EAMCON 2025): KG as retrieval source AND persistent agent memory. NeurIPS 2025 dedicated workshop.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">2025–2026</div>
+          <div class="tl-title">Open models for extraction</div>
+          <div class="tl-desc">Dependency parsers matching GPT-4o on RAGAS metrics — removing LLM dependency in extraction phase (arXiv:2507.03226)</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:16px;">Five Major Trajectories</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card card--accent" style="padding:12px 16px;">
+          <strong style="font-size:13px;">💰 Cost Democratization</strong>
+          <p style="font-size:12px;margin:4px 0 0;color:var(--muted);">$33K → $33 for large corpus indexing. Open models approaching vector RAG cost parity by 2026.</p>
+        </div>
+        <div class="card card--accent2" style="padding:12px 16px;">
+          <strong style="font-size:13px;">🔀 Hybrid by Default</strong>
+          <p style="font-size:12px;margin:4px 0 0;color:var(--muted);">Query routing (simple→vector, complex→graph) becomes the de facto production standard.</p>
+        </div>
+        <div class="card card--accent3" style="padding:12px 16px;">
+          <strong style="font-size:13px;">🤖 Graph + Agents</strong>
+          <p style="font-size:12px;margin:4px 0 0;color:var(--muted);">KG as both retrieval source and shared persistent memory across agent steps.</p>
+        </div>
+        <div class="card" style="padding:12px 16px;border-top:2px solid var(--success);">
+          <strong style="font-size:13px;">🌐 Multimodal GraphRAG</strong>
+          <p style="font-size:12px;margin:4px 0 0;color:var(--muted);">Integrating image, table, and video understanding into graph construction — beyond text-only.</p>
+        </div>
+        <div class="card" style="padding:12px 16px;border-top:2px solid var(--warn);">
+          <strong style="font-size:13px;">⏱️ Temporal KGs</strong>
+          <p style="font-size:12px;margin:4px 0 0;color:var(--muted);">Bitemporal modeling — validFrom/validTo annotations enabling historical queries and audit trails.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SLIDE 18 — SUMMARY                                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="slide" id="slide-18">
+  <div class="slide-badge">18 / 18</div>
+  <div class="eyebrow">Key Takeaways</div>
+  <h2>Summary &amp; Decision Framework</h2>
+  <div class="grid-2" style="gap:28px;margin-top:20px;">
+    <div>
+      <h3 style="margin-bottom:14px;color:var(--accent);">When to use each approach</h3>
+      <table class="ctable" style="font-size:12px;">
+        <thead><tr><th>Use when...</th><th>Choose</th></tr></thead>
+        <tbody>
+          <tr><td>Simple factual Q&A, small corpus, tight budget</td><td><span style="color:var(--accent);">Naive / Advanced RAG</span></td></tr>
+          <tr><td>Production search, high precision needed</td><td><span style="color:var(--accent2);">Advanced RAG + reranker</span></td></tr>
+          <tr><td>Multi-step tasks, heterogeneous tools</td><td><span style="color:var(--accent3);">Agentic RAG</span></td></tr>
+          <tr><td>Multi-hop + entity-rich + large corpus + budget</td><td><span style="color:var(--success);">MS GraphRAG</span></td></tr>
+          <tr><td>Thematic queries over entire corpus</td><td><span style="color:var(--success);">MS GraphRAG Global</span></td></tr>
+          <tr><td>Cost-sensitive, incremental updates needed</td><td><span style="color:var(--success);">LightRAG</span></td></tr>
+          <tr><td>Frequently changing corpus, fast iterations</td><td><span style="color:var(--success);">Fast GraphRAG</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px;color:var(--accent2);">The 5 things to remember</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="background:var(--accent);color:#fff;font-family:var(--font-mono);font-size:11px;font-weight:700;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+          <p style="font-size:13px;margin:2px 0 0;">All three GraphRAG systems are <strong>entity-first</strong> — vector search targets entity embeddings, chunks are always reached downstream through graph structure.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="background:var(--accent2);color:var(--bg);font-family:var(--font-mono);font-size:11px;font-weight:700;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+          <p style="font-size:13px;margin:2px 0 0;">MS GraphRAG global search does <strong>no retrieval at all</strong> — all community summaries are broadcast to the LLM and scored post-hoc.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="background:var(--accent3);color:#fff;font-family:var(--font-mono);font-size:11px;font-weight:700;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+          <p style="font-size:13px;margin:2px 0 0;">GraphRAG excels on <strong>global and multi-hop queries</strong>, but is slower and more expensive for simple factoid lookups than vector RAG.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="background:var(--success);color:var(--bg);font-family:var(--font-mono);font-size:11px;font-weight:700;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
+          <p style="font-size:13px;margin:2px 0 0;">The $33K indexing barrier is <strong>effectively solved</strong> — LazyGraphRAG, LightRAG, and Fast GraphRAG bring it to $33–$100.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="background:var(--warn);color:var(--bg);font-family:var(--font-mono);font-size:11px;font-weight:700;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">5</div>
+          <p style="font-size:13px;margin:2px 0 0;"><strong>Hybrid routing</strong> is the 2025–2026 production answer — route by query type, not one-size-fits-all.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-logo">GraphRAG — Technical Presentation</div>
+  <div>ZetaBox AI Engineering Internship · June 2026</div>
+  <div>Research: arXiv, Microsoft Research, EMNLP 2025</div>
+</footer>
+
+<script>
+(function () {
+  const slides = document.querySelectorAll('.slide');
+  const dots   = document.querySelectorAll('.nav-dot');
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          const idx = Array.from(slides).indexOf(entry.target);
+          dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        }
+      });
+    },
+    { threshold: 0.2 }
+  );
+  slides.forEach((s) => observer.observe(s));
+
+  dots.forEach((dot) => {
+    dot.addEventListener('click', () => {
+      const target = parseInt(dot.dataset.target, 10);
+      slides[target].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+
+  let currentSlide = 0;
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+      e.preventDefault();
+      currentSlide = Math.min(currentSlide + 1, slides.length - 1);
+      slides[currentSlide].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault();
+      currentSlide = Math.max(currentSlide - 1, 0);
+      slides[currentSlide].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  const barFills = document.querySelectorAll('.bar-fill');
+  barFills.forEach((b) => {
+    const target = b.style.width;
+    b.style.width = '0';
+    const barObs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          setTimeout(() => { b.style.width = target; }, 200);
+          barObs.disconnect();
+        }
+      });
+    }, { threshold: 0.5 });
+    barObs.observe(b);
+  });
+})();
+</script>
+</body>
+</html>
